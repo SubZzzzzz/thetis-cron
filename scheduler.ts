@@ -168,8 +168,8 @@ async function executeJob(
     let output: string;
 
     if (job.mode === "script") {
-      // Execute as shell command
-      output = execSync(prompt, {
+      // Execute with bash explicitly (not default sh)
+      output = execSync(`bash -c ${JSON.stringify(prompt)}`, {
         encoding: "utf8",
         timeout: 300_000, // 5 min timeout
         maxBuffer: 10 * 1024 * 1024, // 10MB
