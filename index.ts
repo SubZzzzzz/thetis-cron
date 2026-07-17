@@ -651,10 +651,11 @@ export default function (pi: ExtensionAPI) {
 
   // Register /cron command
   pi.registerCommand("cron", {
-    description: "Manage cron jobs (list, status, etc.)",
+    description: "Manage cron jobs (list, status, run, etc.)",
     handler: async (args, ctx) => {
       const parts = (args || "").trim().split(/\s+/);
       const subcommand = parts[0]?.toLowerCase() || "list";
+      const jobId = parts[1];
 
       let result: string;
 
@@ -666,8 +667,29 @@ export default function (pi: ExtensionAPI) {
         case "status":
           result = await handleStatus();
           break;
+        case "run":
+          if (!jobId) {
+            result = "❌ Missing job ID. Usage: /cron run <job-id>";
+          } else {
+            result = await handleRun(jobId);
+          }
+          break;
+        case "pause":
+          if (!jobId) {
+            result = "❌ Missing job ID. Usage: /cron pause <job-id>";
+          } else {
+            result = await handlePause(jobId);
+          }
+          break;
+        case "resume":
+          if (!jobId) {
+            result = "❌ Missing job ID. Usage: /cron resume <job-id>";
+          } else {
+            result = await handleResume(jobId);
+          }
+          break;
         default:
-          result = `Usage: /cron [list|status]\n\nUse the \`cron\` tool for full job management (create, edit, remove, etc.).`;
+          result = `Usage: /cron [list|status|run|pause|resume] [job-id]\n\nExamples:\n  /cron list\n  /cron status\n  /cron run email-monitor\n  /cron pause email-monitor\n\nUse the \`cron\` tool for full job management (create, edit, remove, etc.).`;
       }
 
       ctx.ui.notify(result, "info");
