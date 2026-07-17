@@ -149,22 +149,16 @@ function getNextRun(cronExpr: string): string | null {
 
 function getNextRunFromInterval(intervalMinutes: number, lastRun: string | null): string {
   const now = new Date();
-  let base: Date;
   
-  if (lastRun) {
-    // Start from last run + interval
-    base = new Date(new Date(lastRun).getTime() + intervalMinutes * 60 * 1000);
-  } else {
-    // First run: next interval boundary
-    base = new Date(now.getTime() + intervalMinutes * 60 * 1000);
-  }
+  // Align to interval boundaries from midnight (e.g., every 90min = 00:00, 01:30, 03:00, 04:30...)
+  const midnight = new Date(now);
+  midnight.setHours(0, 0, 0, 0);
+  const msSinceMidnight = now.getTime() - midnight.getTime();
+  const periodsSinceMidnight = Math.floor(msSinceMidnight / (intervalMinutes * 60 * 1000));
+  const nextPeriodMinutes = (periodsSinceMidnight + 1) * intervalMinutes;
+  const nextRun = new Date(midnight.getTime() + nextPeriodMinutes * 60 * 1000);
   
-  // If base is in the past, move to future
-  if (base <= now) {
-    base = new Date(base.getTime() + intervalMinutes * 60 * 1000);
-  }
-  
-  return base.toISOString();
+  return nextRun.toISOString();
 }
 
 function isDue(job: JobConfig, state: JobState): boolean {
