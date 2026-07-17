@@ -367,6 +367,30 @@ function cleanup(): void {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Initialization                                                     */
+/* ------------------------------------------------------------------ */
+
+function initializeJobs(): void {
+  const jobs = listJobs();
+  const now = new Date();
+  
+  for (const job of jobs) {
+    const state = readState(job.id);
+    
+    // Recalculate next_run if null or in the past
+    if (!state.next_run || new Date(state.next_run) <= now) {
+      if (job.interval_minutes) {
+        state.next_run = getNextRunFromInterval(job.interval_minutes, state.last_run);
+      } else if (job.schedule) {
+        state.next_run = getNextRun(job.schedule);
+      }
+      writeState(job.id, state);
+      log(`🔄 Job ${job.id}: next_run initialized to ${state.next_run}`);
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ */
 /*  Main                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -384,6 +408,9 @@ async function main(): Promise<void> {
   log(`🟢 Scheduler started (PID ${process.pid})`);
   log(`📂 Jobs directory: ${CRON_DIR}`);
   log(`⏱️  Tick interval: ${TICK_INTERVAL_MS / 1000}s`);
+
+  // Initialize jobs on startup
+  initializeJobs();
 
   // Initial tick
   await tick();
