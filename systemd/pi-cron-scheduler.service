@@ -1,0 +1,15 @@
+[Unit]
+Description=Pi Cron Scheduler — Thetis Extension
+After=network.target
+
+[Service]
+Type=simple
+User=%i
+ExecStart=/usr/bin/node %h/.pi/agent/git/github.com/SubZzzzzz/thetis-cron/scheduler.ts
+Restart=on-failure
+RestartSec=10
+StandardOutput=append:%h/.pi/agent/cron/.scheduler.log
+StandardError=append:%h/.pi/agent/cron/.scheduler.log
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,39 @@
+{
+  "name": "thetis-cron",
+  "version": "0.1.0",
+  "description": "Scheduled task runner for Pi — cron jobs with delivery to Discord, ntfy, and more",
+  "keywords": [
+    "pi-package",
+    "cron",
+    "scheduler",
+    "automation",
+    "jobs"
+  ],
+  "author": "Achille Robbe",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SubZzzzzz/thetis-cron.git"
+  },
+  "bugs": {
+    "url": "https://github.com/SubZzzzzz/thetis-cron/issues"
+  },
+  "homepage": "https://github.com/SubZzzzzz/thetis-cron#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "croner": "^9.0.0"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "pi": {
+    "extensions": [
+      "./index.ts"
+    ]
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}
