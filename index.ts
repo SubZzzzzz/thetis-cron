@@ -539,17 +539,38 @@ async function handleStatus(): Promise<string> {
     `**Total jobs:** ${jobs.length}`,
     `**Enabled jobs:** ${enabledJobs.length}`,
     "",
-    "**Jobs:**",
+    "---",
+    "",
   ];
 
-  for (const job of jobs) {
-    const state = readState(job.id);
-    const status = job.enabled ? "✅" : "⏸️";
-    const lastStatus = state.last_status === "success" ? "✅" : state.last_status === "error" ? "❌" : "—";
-    lines.push(
-      `${status} ${job.name} (${job.id}) — ${job.schedule_human} — Last: ${lastStatus} — Runs: ${state.run_count}`
-    );
+  if (jobs.length === 0) {
+    lines.push("_No cron jobs configured._\n");
+    lines.push("Use the `cron` tool to create your first job.");
+  } else {
+    lines.push("**📋 Cron Jobs:**\n");
+    
+    for (const job of jobs) {
+      const state = readState(job.id);
+      const statusIcon = job.enabled ? "🟢" : "🔴";
+      const statusText = job.enabled ? "ACTIVE" : "PAUSED";
+      const lastStatus = state.last_status === "success" ? "✅" : state.last_status === "error" ? "❌" : "—";
+      const lastRun = state.last_run ? new Date(state.last_run).toLocaleString() : "never";
+      const nextRun = state.next_run && job.enabled ? new Date(state.next_run).toLocaleString() : "—";
+      
+      lines.push(`**${statusIcon} ${job.name}** \`${job.id}\` — **${statusText}**`);
+      lines.push(`   📅 Schedule: ${job.schedule_human}`);
+      lines.push(`   🕐 Last run: ${lastRun} (${lastStatus})`);
+      lines.push(`   ⏭️  Next run: ${nextRun}`);
+      lines.push(`   🔢 Total runs: ${state.run_count}`);
+      if (state.last_status === "error" && state.last_error) {
+        lines.push(`   ⚠️  Last error: ${state.last_error.slice(0, 100)}`);
+      }
+      lines.push("");
+    }
   }
+
+  lines.push("---");
+  lines.push("_Commands: `/cron list`, `/cron status`, `cron(action='pause'|'resume'|'run', id='...')`_");
 
   return lines.join("\n");
 }
