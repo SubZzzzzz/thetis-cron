@@ -184,12 +184,21 @@ async function executeJob(
     let output: string;
 
     if (job.mode === "script") {
-      // Execute with bash explicitly (not default sh)
-      output = execSync(`bash -c ${JSON.stringify(prompt)}`, {
-        encoding: "utf8",
-        timeout: 300_000, // 5 min timeout
-        maxBuffer: 10 * 1024 * 1024, // 10MB
-      });
+      // Write prompt to a temp file in the job dir so BASH_SOURCE works
+      const jobDir = path.join(CRON_DIR, job.id);
+      const tmpScript = path.join(jobDir, ".run.sh");
+      fs.writeFileSync(tmpScript, prompt, "utf8");
+      fs.chmodSync(tmpScript, 0o755);
+      try {
+        output = execSync(`bash ${JSON.stringify(tmpScript)}`, {
+          encoding: "utf8",
+          timeout: 300_000, // 5 min timeout
+          maxBuffer: 10 * 1024 * 1024, // 10MB
+          cwd: jobDir,
+        });
+      } finally {
+        try { fs.unlinkSync(tmpScript); } catch {}
+      }
     } else {
       // Execute as Pi agent (pi -p "prompt")
       output = execSync(`pi -p ${JSON.stringify(prompt)}`, {
