@@ -34,8 +34,10 @@ const TICK_INTERVAL_MS = 60_000; // 1 minute
 interface JobConfig {
   id: string;
   name: string;
-  schedule: string;
+  schedule?: string;              // Cron expression (optional if interval_minutes is set)
+  interval_minutes?: number;      // Alternative to cron: run every X minutes
   schedule_human: string;
+  always_notify?: boolean;        // Send notification even when no results
   mode: "agent" | "script";
   enabled: boolean;
   delivery: {
@@ -145,7 +147,27 @@ function getNextRun(cronExpr: string): string | null {
   }
 }
 
-function isDue(state: JobState): boolean {
+function getNextRunFromInterval(intervalMinutes: number, lastRun: string | null): string {
+  const now = new Date();
+  let base: Date;
+  
+  if (lastRun) {
+    // Start from last run + interval
+    base = new Date(new Date(lastRun).getTime() + intervalMinutes * 60 * 1000);
+  } else {
+    // First run: next interval boundary
+    base = new Date(now.getTime() + intervalMinutes * 60 * 1000);
+  }
+  
+  // If base is in the past, move to future
+  if (base <= now) {
+    base = new Date(base.getTime() + intervalMinutes * 60 * 1000);
+  }
+  
+  return base.toISOString();
+}
+
+function isDue(job: JobConfig, state: JobState): boolean {
   if (!state.next_run) return false;
   const nextRun = new Date(state.next_run);
   const now = new Date();
@@ -255,7 +277,7 @@ async function tick(): Promise<void> {
   const dueJobs = jobs.filter((job) => {
     if (!job.enabled) return false;
     const state = readState(job.id);
-    return isDue(state);
+    return isDue(job, state);
   });
 
   if (dueJobs.length === 0) return;
@@ -274,7 +296,14 @@ async function tick(): Promise<void> {
     state.run_count++;
     state.last_status = result.success ? "success" : "error";
     state.last_error = result.error || null;
-    state.next_run = getNextRun(job.schedule);
+    
+    // Calculate next run based on interval_minutes or schedule
+    if (job.interval_minutes) {
+      state.next_run = getNextRunFromInterval(job.interval_minutes, now);
+    } else if (job.schedule) {
+      state.next_run = getNextRun(job.schedule);
+    }
+    
     writeState(job.id, state);
 
     // Save output log
