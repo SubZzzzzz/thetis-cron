@@ -211,14 +211,14 @@ async function executeJob(job: JobConfig): Promise<{ success: boolean; output: s
       // Execute as shell command
       output = execSync(prompt, {
         encoding: "utf8",
-        timeout: 300_000, // 5 min timeout
+        timeout: 900_000, // 15 min timeout
         maxBuffer: 10 * 1024 * 1024, // 10MB
       });
     } else {
       // Execute as Pi agent (pi -p "prompt")
       output = execSync(`pi -p ${JSON.stringify(prompt)}`, {
         encoding: "utf8",
-        timeout: 300_000,
+        timeout: 900_000, // 15 min timeout
         maxBuffer: 10 * 1024 * 1024,
       });
     }
